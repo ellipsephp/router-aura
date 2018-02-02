@@ -25,6 +25,8 @@ class AuraRouterAdapterFactory implements RouterAdapterFactoryInterface
 
     /**
      * Return an aura router adapter wrapped around the aura router.
+     *
+     * @return \Ellipse\Router\AuraRouterAdapter
      */
     public function __invoke(): RouterAdapterInterface
     {

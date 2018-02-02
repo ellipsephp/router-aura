@@ -16,6 +16,7 @@ use Ellipse\Router\MatchedRequestHandler;
 use Ellipse\Router\RouterAdapterInterface;
 use Ellipse\Router\Exceptions\NotFoundException;
 use Ellipse\Router\Exceptions\MethodNotAllowedException;
+use Ellipse\Router\Exceptions\AuraMatcherException;
 
 describe('AuraRouterAdapter', function () {
 
@@ -38,16 +39,19 @@ describe('AuraRouterAdapter', function () {
         beforeEach(function () {
 
             $this->request = mock(ServerRequestInterface::class);
-            $this->matcher = mock(Matcher::class);
-
             $uri = mock(UriInterface::class);
-
-            $uri->getPath->returns('/path');
 
             $this->request->getUri->returns($uri);
             $this->request->getMethod->returns('GET');
+            $uri->getPath->returns('/path');
+
+            $this->matcher = mock(Matcher::class);
 
             $this->router->getMatcher->returns($this->matcher);
+
+            $this->route = new Route;
+
+            $this->matcher->match->with($this->request)->returns($this->route);
 
         });
 
@@ -58,11 +62,8 @@ describe('AuraRouterAdapter', function () {
                 $handler = new class {};
                 $attributes = ['k1' => 'v1', 'k2' => 'v2'];
 
-                $route = new Route;
-                $route->handler($handler);
-                $route->attributes($attributes);
-
-                $this->matcher->match->with($this->request)->returns($route);
+                $this->route->handler($handler);
+                $this->route->attributes($attributes);
 
                 $test = $this->adapter->match($this->request->get());
 
@@ -74,16 +75,14 @@ describe('AuraRouterAdapter', function () {
 
         });
 
-        context('when no route is matching the given request', function () {
+        context('when no route is matching the request path', function () {
 
             it('should throw a NotFoundException', function () {
 
-                $route = new Route;
-
-                $route->failedRule(Path::class);
+                $this->route->failedRule(Path::class);
 
                 $this->matcher->match->returns(false);
-                $this->matcher->getFailedRoute->returns($route);
+                $this->matcher->getFailedRoute->returns($this->route);
 
                 $test = function () {
 
@@ -91,7 +90,7 @@ describe('AuraRouterAdapter', function () {
 
                 };
 
-                $exception = new NotFoundException('GET', '/path');
+                $exception = new NotFoundException('/path');
 
                 expect($test)->toThrow($exception);
 
@@ -99,16 +98,14 @@ describe('AuraRouterAdapter', function () {
 
         });
 
-        context('when a route is matching the request url but with a different method', function () {
+        context('when a route is matching the request path but with a different method', function () {
 
-            it('should fail when the given request method is not accepted for its path', function () {
+            it('should throw a MethodNotAllowedException', function () {
 
-                $route = new Route;
-
-                $route->allows(['POST'])->failedRule(Allows::class);
+                $this->route->allows(['POST'])->failedRule(Allows::class);
 
                 $this->matcher->match->returns(false);
-                $this->matcher->getFailedRoute->returns($route);
+                $this->matcher->getFailedRoute->returns($this->route);
 
                 $test = function () {
 
@@ -116,7 +113,30 @@ describe('AuraRouterAdapter', function () {
 
                 };
 
-                $exception = new MethodNotAllowedException('/path', ['POST']);
+                $exception = new MethodNotAllowedException('GET', '/path', ['POST']);
+
+                expect($test)->toThrow($exception);
+
+            });
+
+        });
+
+        context('when any other rule failed when mathing the request', function () {
+
+            it('should throw a AuraMatcherException', function () {
+
+                $this->route->failedRule('rule');
+
+                $this->matcher->match->returns(false);
+                $this->matcher->getFailedRoute->returns($this->route);
+
+                $test = function () {
+
+                    $this->adapter->match($this->request->get());
+
+                };
+
+                $exception = new AuraMatcherException('GET', '/path', 'rule');
 
                 expect($test)->toThrow($exception);
 

@@ -5,10 +5,12 @@ namespace Ellipse\Router;
 use Psr\Http\Message\ServerRequestInterface;
 
 use Aura\Router\RouterContainer;
+use Aura\Router\Rule\Path;
 use Aura\Router\Rule\Allows;
 
 use Ellipse\Router\Exceptions\NotFoundException;
 use Ellipse\Router\Exceptions\MethodNotAllowedException;
+use Ellipse\Router\Exceptions\AuraMatcherException;
 
 class AuraRouterAdapter implements RouterAdapterInterface
 {
@@ -40,10 +42,7 @@ class AuraRouterAdapter implements RouterAdapterInterface
 
         if ($route !== false) {
 
-            $handler = $route->handler;
-            $attributes = $route->attributes;
-
-            return new MatchedRequestHandler($handler, $attributes);
+            return new MatchedRequestHandler($route->handler, $route->attributes);
 
         }
 
@@ -52,14 +51,18 @@ class AuraRouterAdapter implements RouterAdapterInterface
         $uri = $request->getUri()->getPath();
         $method = $request->getMethod();
 
-        if ($failed->failedRule == Allows::class) {
+        if ($failed->failedRule === Allows::class) {
 
-            $allowed_methods = $failed->allows;
-
-            throw new MethodNotAllowedException($uri, $allowed_methods);
+            throw new MethodNotAllowedException($method, $uri, $failed->allows);
 
         }
 
-        throw new NotFoundException($method, $uri);
+        if ($failed->failedRule === Path::class) {
+
+            throw new NotFoundException($uri);
+
+        }
+
+        throw new AuraMatcherException($method, $uri, $failed->failedRule);
     }
 }

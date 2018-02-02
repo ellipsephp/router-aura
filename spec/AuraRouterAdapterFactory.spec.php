@@ -26,7 +26,7 @@ describe('AuraRouterAdapterFactory', function () {
 
     describe('->__invoke()', function () {
 
-        it('should return a new aura router adapter wrapped around the router', function () {
+        it('should return a new aura router adapter wrapped around the aura router', function () {
 
             $test = ($this->factory)();
 
