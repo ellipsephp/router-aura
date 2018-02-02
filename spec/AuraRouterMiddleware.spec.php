@@ -13,13 +13,13 @@ describe('AuraRouterMiddleware', function () {
 
         $this->delegate = mock(RouterContainer::class);
 
-        $this->router = new AuraRouterMiddleware($this->delegate->get());
+        $this->middleware = new AuraRouterMiddleware($this->delegate->get());
 
     });
 
     it('should extend RouterMiddleware', function () {
 
-        expect($this->router)->toBeAnInstanceOf(RouterMiddleware::class);
+        expect($this->middleware)->toBeAnInstanceOf(RouterMiddleware::class);
 
     });
 
