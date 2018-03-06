@@ -1,8 +1,8 @@
 # Aura router
 
-Aura router **[Psr-15](https://www.php-fig.org/psr/psr-15/)** middleware and request handler.
+Aura router [Psr-15](https://www.php-fig.org/psr/psr-15/) middleware and request handler.
 
-**Require** php >= 7.1
+**Require** php >= 7.0
 
 **Installation** `composer require ellipse/router-aura`
 
